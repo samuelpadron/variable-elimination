@@ -28,7 +28,11 @@ if __name__ == '__main__':
     factors = [net.probabilities[node] for node in net.nodes]
     ve = VariableElimination(net)
     
-    ve.factor_reduction(net.probabilities['Alarm'], net.probabilities['Alarm'].columns.values[1])
+    #ve.factor_reduction(net.probabilities['Alarm'], net.probabilities['Alarm'].columns.values[1])
+    print(net.probabilities['Alarm'], "\n")
+    ve.factor_reduction(net.probabilities['Alarm'], 'Earthquake', 'True')
+    
+    
     # Set the node to be queried as follows:
     #query = 'Alarm'
 
