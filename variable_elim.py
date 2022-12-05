@@ -52,7 +52,7 @@ class VariableElimination():
             DataFrame: _description_
         """
         columns = [x for x in factor.columns.values if x != 'prob' and x != variable.columns.values[0]]
-        return factor.groupby(columns, axis=0, as_index=False).sum()
+        return factor.groupby(columns, axis=0, as_index=False).sum(numeric_only=True)
         
         
 
