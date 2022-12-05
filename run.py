@@ -28,14 +28,17 @@ if __name__ == '__main__':
     factors = [net.probabilities[node] for node in net.nodes]
     ve = VariableElimination(net)
     
-    print("Factor product test:")
-    print(ve.factor_product(factors[0], factors[2]))
+    #print("Factor product test:")
+    #print(ve.factor_product(factors[0], factors[2]))
     
-    print("Factor marginalization test:")
-    print(ve.factor_marginalization(factors[2], factors[0]))
+    #print("Factor marginalization test:")
+    #print(ve.factor_marginalization(factors[2], factors[0]))
+    
+    #print("Factor reduction test:")
+    #print(ve.factor_reduction(factors[2], "Burglary", "True"))
     
     #ve.factor_reduction(net.probabilities['Alarm'], net.probabilities['Alarm'].columns.values[1])
-    #print(net.probabilities['Alarm'], "\n")
+    print(net.probabilities['Alarm'], "\n")
     ve.factor_reduction(net.probabilities['Alarm'], 'Earthquake', 'True')
     
     
