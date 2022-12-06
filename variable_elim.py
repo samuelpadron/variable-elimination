@@ -91,3 +91,27 @@ class VariableElimination():
                 for the query variable
 
         """
+        print("The query variable is: {query}".format(query=query))
+        
+        print("The observed values are: {observed}".format(observed=observed))
+        
+        print("The elimination order is: {order}".format(order=elim_order))
+        
+        factors = [self.network.probabilities[node] for node in self.network.nodes]
+        
+        for variable in elim_order:
+            next_variable = elim_order.pop(0) 
+                
+            print("Next variable to remove is {x}".format(x=next_variable))
+            
+            #get factors that include the variable
+            factors_including_variable = [factor for factor in factors if next_variable in factor.columns.values]
+            
+            #get product of factors
+            #for factor in factors_with_var:
+            
+            
+        
+        
+        
+        
