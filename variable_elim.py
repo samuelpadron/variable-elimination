@@ -7,6 +7,7 @@ Class for the implementation of the variable elimination algorithm.
 from __future__ import annotations
 import pandas as pd
 from pandas import DataFrame
+from functools import reduce
 class VariableElimination():
 
     def __init__(self, network):
@@ -35,6 +36,8 @@ class VariableElimination():
     
 
     def factor_product(self, factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
+        print(factor_a)
+        print(factor_b)
         common_columns = set(factor_a.columns.values).intersection(set(factor_b.columns.values))
         common_columns.remove('prob')
         print(common_columns)
@@ -72,7 +75,7 @@ class VariableElimination():
         for column in columns:
             new_pd = new_pd.merge(factor_b, on=column)
             new_pd['prob'] = new_pd['prob_x'] * new_pd['prob_y']
-            new_pd = new_pd.drop(columns=['prob_x', 'prob_y', column])
+            new_pd = new_pd.drop(columns=['prob_x', 'prob_y'])
         return new_pd
 
     def run(self, query, observed, elim_order):
@@ -108,6 +111,10 @@ class VariableElimination():
             factors_including_variable = [factor for factor in factors if next_variable in factor.columns.values]
             
             #get product of factors
+            result = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
+            
+            print(result)
+            
             #for factor in factors_with_var:
             
             
