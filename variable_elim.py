@@ -9,6 +9,7 @@ import pandas as pd
 from pandas import DataFrame
 from functools import reduce
 import itertools
+import numpy as np
 class VariableElimination():
 
     def __init__(self, network):
@@ -90,8 +91,6 @@ class VariableElimination():
                 for the query variable
 
         """
-        print(self.factors)
-        
         print("The query variable is: {query}".format(query=query))
         
         print("The observed values are: {observed}".format(observed=observed))
@@ -107,22 +106,28 @@ class VariableElimination():
             
             factor_names = list(map(lambda x: x.columns.values[0], factors_including_variable))
             
+            print("the variable is " + next_variable)
+            
+            print("The factors containing the variable are:")
             print(factor_names)
     
             #get product of factors
             product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
             
+            print("The product of these factors is:")
+            print(product)
+            
             #sum out the variable
             result = self.factor_marginalization(product, next_variable)
             
-            variable_name_of_factors = list(itertools.chain(list(map(lambda factor: factor.columns.values, factors_including_variable))))
-            print(variable_name_of_factors)
-            
             #remove factors including variable from the formula
-            self.factors = list(filter(lambda factor: factor.columns.values[0] not in variable_name_of_factors, self.factors))
+            #self.factors = list(filter(lambda factor: factor.columns.values not in factor_names, self.factors))
             
             #add new factor to list of factors
             self.factors.append(result)
+            print("resulting factors are:")
+            for f in self.factors:
+                print(f)
             
         #normalize resulting factor
         print("resulting factor is:")
