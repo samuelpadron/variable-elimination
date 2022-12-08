@@ -17,6 +17,7 @@ class VariableElimination():
 
         """
         self.network = network
+        self.factors = [network.probabilities[node] for node in network.nodes]
 
 
     def factor_reduction(self, factor:DataFrame, column_observed:str, value_observed:str) -> DataFrame:
@@ -32,9 +33,7 @@ class VariableElimination():
         
         return factor[factor[column_observed] == value_observed].drop(columns=[column_observed])
         
-
-    
-
+        
     def factor_product(self, factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
         print(factor_a)
         print(factor_b)
@@ -58,7 +57,6 @@ class VariableElimination():
         return factor.groupby(columns, axis=0, as_index=False).sum(numeric_only=True)
         
         
-
     def multiply_on_columns(self, columns:list[str], factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
         """
 
@@ -77,6 +75,7 @@ class VariableElimination():
             new_pd = new_pd.drop(columns=['prob_x', 'prob_y'])
         return new_pd
 
+
     def run(self, query, observed, elim_order):
         """
         Use the variable elimination algorithm to find out the probability
@@ -93,6 +92,8 @@ class VariableElimination():
                 for the query variable
 
         """
+        print(self.factors)
+        
         print("The query variable is: {query}".format(query=query))
         
         print("The observed values are: {observed}".format(observed=observed))
@@ -101,20 +102,30 @@ class VariableElimination():
         
         factors = [self.network.probabilities[node] for node in self.network.nodes]
         
-        for variable in elim_order:
+        for variable in enumerate(elim_order):
             next_variable = elim_order.pop(0) 
                 
-            print("Next variable to remove is {x}".format(x=next_variable))
-            
-            #get factors that include the variable
             factors_including_variable = [factor for factor in factors if next_variable in factor.columns.values]
             
+            factor_names = list(map(lambda x: x.columns.values[0], factors_including_variable))
+    
             #get product of factors
             product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
             
             #sum out the variable
             result = self.factor_marginalization(product, next_variable)
-            print(result)
+            
+            #remove factors including variable from the formula
+            self.factors = list(filter(lambda factor: factor.columns.values[0] not in list(map(lambda factor2: factor.columns.values[0], factors_including_variable)), self.factors))
+            
+            #add new factor to list of factors
+            self.factors.append(result)
+            print(self.factors)
+            
+        #normalize resulting factor
+        print("resulting factor is:")
+        print(self.factors)
+            
             
             
         

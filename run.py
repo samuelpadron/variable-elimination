@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # Make your variable elimination code in the seperate file: 'variable_elim'. 
     # You use this file as follows:
-    factors = [net.probabilities[node] for node in net.nodes]
+    #factors = [net.probabilities[node] for node in net.nodes]
     ve = VariableElimination(net)
     
     #print("Factor product test:")
