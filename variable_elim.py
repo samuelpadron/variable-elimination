@@ -8,6 +8,7 @@ from __future__ import annotations
 import pandas as pd
 from pandas import DataFrame
 from functools import reduce
+import itertools
 class VariableElimination():
 
     def __init__(self, network):
@@ -35,11 +36,8 @@ class VariableElimination():
         
         
     def factor_product(self, factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
-        print(factor_a)
-        print(factor_b)
         common_columns = set(factor_a.columns.values).intersection(set(factor_b.columns.values))
         common_columns.remove('prob')
-        print(common_columns)
         return self.multiply_on_columns(common_columns, factor_a, factor_b)
         
 
@@ -102,12 +100,14 @@ class VariableElimination():
         
         factors = [self.network.probabilities[node] for node in self.network.nodes]
         
-        for variable in enumerate(elim_order):
+        for variable in elim_order:
             next_variable = elim_order.pop(0) 
                 
             factors_including_variable = [factor for factor in factors if next_variable in factor.columns.values]
             
             factor_names = list(map(lambda x: x.columns.values[0], factors_including_variable))
+            
+            print(factor_names)
     
             #get product of factors
             product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
@@ -115,12 +115,14 @@ class VariableElimination():
             #sum out the variable
             result = self.factor_marginalization(product, next_variable)
             
+            variable_name_of_factors = list(itertools.chain(list(map(lambda factor: factor.columns.values, factors_including_variable))))
+            print(variable_name_of_factors)
+            
             #remove factors including variable from the formula
-            self.factors = list(filter(lambda factor: factor.columns.values[0] not in list(map(lambda factor2: factor.columns.values[0], factors_including_variable)), self.factors))
+            self.factors = list(filter(lambda factor: factor.columns.values[0] not in variable_name_of_factors, self.factors))
             
             #add new factor to list of factors
             self.factors.append(result)
-            print(self.factors)
             
         #normalize resulting factor
         print("resulting factor is:")
