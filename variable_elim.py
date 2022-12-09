@@ -97,39 +97,44 @@ class VariableElimination():
         
         print("The elimination order is: {order}".format(order=elim_order))
         
-        factors = [self.network.probabilities[node] for node in self.network.nodes]
+        print("----------------------------------")
         
-        for variable in elim_order:
+        while len(elim_order) > 0:
+            #update variable Z to be next in ordering
             next_variable = elim_order.pop(0) 
                 
-            factors_including_variable = [factor for factor in factors if next_variable in factor.columns.values]
+            #find which factors have Z
+            factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
             
-            factor_names = list(map(lambda x: x.columns.values[0], factors_including_variable))
+            print("The next variable to eliminate is " + next_variable)
             
-            print("the variable is " + next_variable)
-            
-            print("The factors containing the variable are:")
-            print(factor_names)
-    
             #get product of factors
             product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
-            
-            print("The product of these factors is:")
-            print(product)
             
             #sum out the variable
             result = self.factor_marginalization(product, next_variable)
             
-            #remove factors including variable from the formula
-            #self.factors = list(filter(lambda factor: factor.columns.values not in factor_names, self.factors))
-            
-            #add new factor to list of factors
-            self.factors.append(result)
-            print("resulting factors are:")
+            #see what the old factors are
+            print("The old factors are:")
             for f in self.factors:
                 print(f)
             
-        #normalize resulting factor
+            #remove factors that have Z from the formula
+            self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
+            
+            #add new factor to list of factors
+            self.factors.append(result)
+            
+            #check if the factors were correctly updated
+            print("The resulting factors are:")
+            for f in self.factors:
+                print(f)
+                
+            print("----------------------------------")
+            print("Variables left to eliminate:")
+            print(elim_order)
+            
+        #TODO normalize resulting factor
         print("resulting factor is:")
         print(self.factors)
             
