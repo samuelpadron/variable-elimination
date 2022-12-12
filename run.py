@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # is either specified by a list or a heuristic function that determines the elimination ordering
     # given the network. Experimentation with different heuristics will earn bonus points. The elimination
     # ordering can for example be set as follows:
-    elim_order = ['Burglary', 'Earthquake', 'JohnCalls', 'MaryCalls']
+    elim_order = ['Earthquake', 'JohnCalls', 'MaryCalls']
 
     # Call the variable elimination function for the queried node given the evidence and the elimination ordering as follows:   
     ve.run(query, evidence, elim_order)

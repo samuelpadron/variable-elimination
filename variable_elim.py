@@ -23,7 +23,7 @@ class VariableElimination():
 
 
     def factor_reduction(self, factor:DataFrame, column_observed:str, value_observed:str) -> DataFrame:
-        """_summary_
+        """reduce factor by filtering rows containing only the observed value
 
         Args:
             factor_a (DataFrame): _description_
@@ -94,11 +94,20 @@ class VariableElimination():
         print("The query variable is: {query}".format(query=query))
         
         print("The observed values are: {observed}".format(observed=observed))
-        
+    
         print("The elimination order is: {order}".format(order=elim_order))
         
         print("----------------------------------")
-        
+        # discard observed values
+        filtered_factors = []
+        for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
+            for factor in self.factors:
+                if column_observed in factor.columns:
+                    filtered_factors.append(self.factor_reduction(factor, column_observed, value_observed))
+                else:
+                    filtered_factors.append(factor)
+        self.factors = filtered_factors
+
         while len(elim_order) > 0:
             #update variable Z to be next in ordering
             next_variable = elim_order.pop(0) 
@@ -106,35 +115,39 @@ class VariableElimination():
             #find which factors have Z
             factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
             
-            print("The next variable to eliminate is " + next_variable)
+            if len(factors_including_variable) > 0: #do we need this?
+
+                print("The next variable to eliminate is " + next_variable)
             
-            #get product of factors
-            product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
-            
-            #sum out the variable
-            result = self.factor_marginalization(product, next_variable)
-            
-            #see what the old factors are
-            print("The old factors are:")
-            for f in self.factors:
-                print(f)
-            
-            #remove factors that have Z from the formula
-            self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
-            
-            #add new factor to list of factors
-            self.factors.append(result)
-            
-            #check if the factors were correctly updated
-            print("The resulting factors are:")
-            for f in self.factors:
-                print(f)
-                
-            print("----------------------------------")
-            print("Variables left to eliminate:")
-            print(elim_order)
-            
+                #get product of factors
+                product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
+
+                #sum out the variable
+                result = self.factor_marginalization(product, next_variable)
+
+                #see what the old factors are
+                print("The old factors are:")
+                for f in self.factors:
+                    print(f)
+
+                #remove factors that have Z from the formula
+                self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
+
+                #add new factor to list of factors
+                self.factors.append(result)
+
+                #check if the factors were correctly updated
+                print("The resulting factors are:")
+                for f in self.factors:
+                    print(f)
+
+                print("----------------------------------")
+                print("Variables left to eliminate:")
+                print(elim_order)
+
         #TODO normalize resulting factor
+        # divide all the elements in the factor by the sum of the factor resulting by the marginalization of 
+        #the varibable we have in the queue.
         print("resulting factor is:")
         print(self.factors)
             
