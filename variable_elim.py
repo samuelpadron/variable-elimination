@@ -10,6 +10,7 @@ from pandas import DataFrame
 from functools import reduce
 import itertools
 import numpy as np
+
 class VariableElimination():
 
     def __init__(self, network):
@@ -53,6 +54,11 @@ class VariableElimination():
             DataFrame: _description_
         """
         columns = [x for x in factor.columns.values if x != 'prob' and x != variable]
+        if len(columns)==0:
+            if variable not in self.query:
+                return factor.sum(numeric_only=True)
+            else:
+                return factor
         return factor.groupby(columns, axis=0, as_index=False).sum(numeric_only=True)
         
         
@@ -99,15 +105,21 @@ class VariableElimination():
         
         print("----------------------------------")
         # discard observed values
+        self.query = query
         filtered_factors = []
-        for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
-            for factor in self.factors:
+        
+            
+        for factor in self.factors:
+            for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
                 if column_observed in factor.columns:
-                    filtered_factors.append(self.factor_reduction(factor, column_observed, value_observed))
-                else:
-                    filtered_factors.append(factor)
-        self.factors = filtered_factors
+                    factor = self.factor_reduction(factor, column_observed, value_observed)
+            filtered_factors.append(factor)
 
+        #filter factors because after reduction some of them only have the probability left with no information about the variable so they are useless
+        self.factors = list(filter(lambda x: len(x.columns) > 1,filtered_factors))
+        
+        print("These are our factors: \n",self.factors)
+        #exit(1)
         while len(elim_order) > 0:
             #update variable Z to be next in ordering
             next_variable = elim_order.pop(0) 
@@ -115,41 +127,42 @@ class VariableElimination():
             #find which factors have Z
             factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
             
-            if len(factors_including_variable) > 0: #do we need this?
 
-                print("The next variable to eliminate is " + next_variable)
-            
-                #get product of factors
-                product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
+            print("The next variable to eliminate is " + next_variable)
+        
+            #get product of factors
+            product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
 
-                #sum out the variable
-                result = self.factor_marginalization(product, next_variable)
-
-                #see what the old factors are
-                print("The old factors are:")
-                for f in self.factors:
-                    print(f)
-
-                #remove factors that have Z from the formula
-                self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
-
-                #add new factor to list of factors
-                self.factors.append(result)
-
-                #check if the factors were correctly updated
-                print("The resulting factors are:")
-                for f in self.factors:
-                    print(f)
-
-                print("----------------------------------")
-                print("Variables left to eliminate:")
-                print(elim_order)
-
+            #sum out the variable
+            result = self.factor_marginalization(product, next_variable)
+        
+            #see what the old factors are
+            #print("The old factors are:")
+            #for f in self.factors:
+            #    print(f)
+            #remove factors that have Z from the formula
+            self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
+            #add new factor to list of factors
+            if not isinstance(result, pd.core.series.Series):
+                self.factors.append(result) #second append??
+            #check if the factors were correctly updated
+            print("The resulting factors are:")
+            for f in self.factors:
+                print(f)
+            print("----------------------------------")
+            print("Variables left to eliminate:")
+            print(elim_order)
         #TODO normalize resulting factor
         # divide all the elements in the factor by the sum of the factor resulting by the marginalization of 
         #the varibable we have in the queue.
+        #df[df.select_dtypes(include=['number']).columns] *= 3
+        
+
+        result = self.factors[-1]#.div(self.factors[-1].sum(numeric_only=True)[0])
+        numeric_columns = result.select_dtypes(include=['number']).columns
+        result[numeric_columns] = result[numeric_columns].div(result[numeric_columns].sum(numeric_only=True)[0])
         print("resulting factor is:")
-        print(self.factors)
+        print(result)
             
             
             
