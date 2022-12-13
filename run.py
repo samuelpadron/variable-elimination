@@ -53,4 +53,4 @@ if __name__ == '__main__':
     #THE LAST ONE NEED TO BE THE VARIABLE IN THE QUERY
     #elim_order.append(query)
     # Call the variable elimination function for the queried node given the evidence and the elimination ordering as follows:   
-    ve.run(query, evidence, elim_order)
+    result = ve.run(query, evidence, elim_order)

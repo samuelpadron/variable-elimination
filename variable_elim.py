@@ -27,17 +27,27 @@ class VariableElimination():
         """reduce factor by filtering rows containing only the observed value
 
         Args:
-            factor_a (DataFrame): _description_
-            value_observed (str): _description_
+            factor_a (DataFrame): the factor to be reduced
+            column_observed (str): the name of the column where the value will be used to reduce the factor
+            value_observed (str): the value observed that we use to reduce the factor
 
         Returns:
-            DataFrame: _description_
+            DataFrame: the reduced factor
         """
         
         return factor[factor[column_observed] == value_observed].drop(columns=[column_observed])
         
         
     def factor_product(self, factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
+        """_summary_
+
+        Args:
+            factor_a (DataFrame): _description_
+            factor_b (DataFrame): _description_
+
+        Returns:
+            DataFrame: _description_
+        """
         common_columns = set(factor_a.columns.values).intersection(set(factor_b.columns.values))
         common_columns.remove('prob')
         return self.multiply_on_columns(common_columns, factor_a, factor_b)
@@ -80,8 +90,20 @@ class VariableElimination():
             new_pd = new_pd.drop(columns=['prob_x', 'prob_y'])
         return new_pd
 
+    def normalize_factor(self, factor:DataFrame) -> DataFrame:
+        """normalize the given factor by dividing the numbers by the sum of all numbers in the factor
 
-    def run(self, query, observed, elim_order):
+        Args:
+            factor (DataFrame): factor to be normalized
+
+        Returns:
+            DataFrame: normalized factor
+        """
+        numeric_columns = factor.select_dtypes(include=['number']).columns
+        factor[numeric_columns] = factor[numeric_columns].div(factor[numeric_columns].sum(numeric_only=True)[0])
+        return factor
+
+    def run(self, query:list[str], observed:dict, elim_order:list[str]):
         """
         Use the variable elimination algorithm to find out the probability
         distribution of the query variable given the observed variables
@@ -94,7 +116,7 @@ class VariableElimination():
                         given the network during the run
 
         Output: A variable holding the probability distribution
-                for the query variable
+                for the query variable, this is printed and not returned
 
         """
         print("The query variable is: {query}".format(query=query))
@@ -137,9 +159,9 @@ class VariableElimination():
             result = self.factor_marginalization(product, next_variable)
         
             #see what the old factors are
-            #print("The old factors are:")
-            #for f in self.factors:
-            #    print(f)
+            print("The old factors are:")
+            for f in self.factors:
+                print(f)
             #remove factors that have Z from the formula
             self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
             #add new factor to list of factors
@@ -152,17 +174,12 @@ class VariableElimination():
             print("----------------------------------")
             print("Variables left to eliminate:")
             print(elim_order)
-        #TODO normalize resulting factor
-        # divide all the elements in the factor by the sum of the factor resulting by the marginalization of 
-        #the varibable we have in the queue.
-        #df[df.select_dtypes(include=['number']).columns] *= 3
         
-
-        result = self.factors[-1]#.div(self.factors[-1].sum(numeric_only=True)[0])
-        numeric_columns = result.select_dtypes(include=['number']).columns
-        result[numeric_columns] = result[numeric_columns].div(result[numeric_columns].sum(numeric_only=True)[0])
+        result = self.normalize_factor(self.factors[-1])
+        
         print("resulting factor is:")
         print(result)
+        return result
             
             
             
