@@ -11,6 +11,7 @@ from functools import reduce
 import itertools
 import numpy as np
 import logging
+
 class VariableElimination():
 
     def __init__(self, network):
@@ -28,17 +29,27 @@ class VariableElimination():
         """reduce factor by filtering rows containing only the observed value
 
         Args:
-            factor_a (DataFrame): _description_
-            value_observed (str): _description_
+            factor_a (DataFrame): the factor to be reduced
+            column_observed (str): the name of the column where the value will be used to reduce the factor
+            value_observed (str): the value observed that we use to reduce the factor
 
         Returns:
-            DataFrame: _description_
+            DataFrame: the reduced factor
         """
         
         return factor[factor[column_observed] == value_observed].drop(columns=[column_observed])
         
         
     def factor_product(self, factor_a:DataFrame, factor_b:DataFrame) -> DataFrame:
+        """_summary_
+
+        Args:
+            factor_a (DataFrame): _description_
+            factor_b (DataFrame): _description_
+
+        Returns:
+            DataFrame: _description_
+        """
         common_columns = set(factor_a.columns.values).intersection(set(factor_b.columns.values))
         common_columns.remove('prob')
         return self.multiply_on_columns(common_columns, factor_a, factor_b)
@@ -55,6 +66,11 @@ class VariableElimination():
             DataFrame: _description_
         """
         columns = [x for x in factor.columns.values if x != 'prob' and x != variable]
+        if len(columns)==0:
+            if variable not in self.query:
+                return factor.sum(numeric_only=True)
+            else:
+                return factor
         return factor.groupby(columns, axis=0, as_index=False).sum(numeric_only=True)
         
         
@@ -76,8 +92,20 @@ class VariableElimination():
             new_pd = new_pd.drop(columns=['prob_x', 'prob_y'])
         return new_pd
 
+    def normalize_factor(self, factor:DataFrame) -> DataFrame:
+        """normalize the given factor by dividing the numbers by the sum of all numbers in the factor
 
-    def run(self, query, observed, elim_order):
+        Args:
+            factor (DataFrame): factor to be normalized
+
+        Returns:
+            DataFrame: normalized factor
+        """
+        numeric_columns = factor.select_dtypes(include=['number']).columns
+        factor[numeric_columns] = factor[numeric_columns].div(factor[numeric_columns].sum(numeric_only=True)[0])
+        return factor
+
+    def run(self, query:list(str), observed:dict, elim_order:list[str]):
         """
         Use the variable elimination algorithm to find out the probability
         distribution of the query variable given the observed variables
@@ -90,7 +118,7 @@ class VariableElimination():
                         given the network during the run
 
         Output: A variable holding the probability distribution
-                for the query variable
+                for the query variable, this is printed and not returned
 
         """
         
@@ -102,21 +130,20 @@ class VariableElimination():
         logging.info("The elimination order is: {order}".format(order=elim_order))
         
         # discard observed values
+        self.query = query
         filtered_factors = []
-        for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
-            for factor in self.factors:
+        
+            
+        for factor in self.factors:
+            for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
                 if column_observed in factor.columns:
-                    filtered_factors.append(self.factor_reduction(factor, column_observed, value_observed))
-                else:
-                    filtered_factors.append(factor)
-        self.factors = filtered_factors
-        
-        logging.info("The initial factors are:")
-        for f in self.factors:
-                    print(f)
-        
-        logging.info("______________________________________")
+                    factor = self.factor_reduction(factor, column_observed, value_observed)
+            filtered_factors.append(factor)
 
+        #filter factors because after reduction some of them only have the probability left with no information about the variable so they are useless
+        self.factors = list(filter(lambda x: len(x.columns) > 1,filtered_factors))
+
+        
         while len(elim_order) > 0:
             #update variable Z to be next in ordering
             next_variable = elim_order.pop(0) 
@@ -124,42 +151,43 @@ class VariableElimination():
             #find which factors have Z
             factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
             
-            if len(factors_including_variable) > 0: #do we need this?
 
-                logging.info("The next variable to eliminate is " + next_variable)
-            
-                #get product of factors
-                product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
-
-                #sum out the variable
-                result = self.factor_marginalization(product, next_variable)
-
-                # #see what the old factors are
-                # print("The old factors are:")
-                # for f in self.factors:
-                #     print(f)
-
-                #remove factors that have Z from the formula
-                self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
-
-                #add new factor to list of factors
-                self.factors.append(result)
-
-                #check if the factors were correctly updated
-                logging.info("The resulting factors are:")
-                for f in self.factors:
-                    logging.info(f)
-
-                logging.info("----------------------------------")
-                logging.info("Variables left to eliminate:")
-                logging.info(elim_order)
-
-        #TODO normalize resulting factor
-        # divide all the elements in the factor by the sum of the factor resulting by the marginalization of 
-        #the varibable we have in the queue.
-        logging.info("resulting factor is:")
-        logging.info(self.factors)
+            #print("The next variable to eliminate is " + next_variable)
         
+            #get product of factors
+            product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
+
+            #sum out the variable
+            result = self.factor_marginalization(product, next_variable)
+        
+            #see what the old factors are
+            #print("The old factors are:")
+            #for f in self.factors:
+            #    print(f)
+            #remove factors that have Z from the formula
+            self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
+            #add new factor to list of factors
+            if not isinstance(result, pd.core.series.Series):
+                self.factors.append(result)
+            #check if the factors were correctly updated
+            #print("The resulting factors are:")
+            #for f in self.factors:
+            #    print(f)
+            #print("----------------------------------")
+            #print("Variables left to eliminate:")
+            #print(elim_order)
+        #multipoly for query variables?
+        for next_variable in self.query:
+            factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
+            product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
+            self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors)) 
+            self.factors.append(product)
+
+        result = self.normalize_factor(product)
+        
+        print("resulting factor is:")
+        print(result)
+        return result
             
             
             
