@@ -104,6 +104,10 @@ class VariableElimination():
         numeric_columns = factor.select_dtypes(include=['number']).columns
         factor[numeric_columns] = factor[numeric_columns].div(factor[numeric_columns].sum(numeric_only=True)[0])
         return factor
+    
+    def log_factors(self, factors):
+        for f in factors:
+            logging.info(f)
 
     def run(self, query:list(str), observed:dict, elim_order:list[str]):
         """
@@ -143,6 +147,11 @@ class VariableElimination():
         #filter factors because after reduction some of them only have the probability left with no information about the variable so they are useless
         self.factors = list(filter(lambda x: len(x.columns) > 1,filtered_factors))
 
+        logging.info("Initial factors:")
+        self.log_factors(self.factors)
+        
+        logging.info("----------------------------------")
+        logging.info("Running Variable Elimination:")
         
         while len(elim_order) > 0:
             #update variable Z to be next in ordering
@@ -151,8 +160,7 @@ class VariableElimination():
             #find which factors have Z
             factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
             
-
-            #print("The next variable to eliminate is " + next_variable)
+            logging.info("The next variable to eliminate is " + next_variable)
         
             #get product of factors
             product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
@@ -160,22 +168,19 @@ class VariableElimination():
             #sum out the variable
             result = self.factor_marginalization(product, next_variable)
         
-            #see what the old factors are
-            #print("The old factors are:")
-            #for f in self.factors:
-            #    print(f)
             #remove factors that have Z from the formula
             self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
+            
             #add new factor to list of factors
             if not isinstance(result, pd.core.series.Series):
                 self.factors.append(result)
+                
             #check if the factors were correctly updated
-            #print("The resulting factors are:")
-            #for f in self.factors:
-            #    print(f)
-            #print("----------------------------------")
-            #print("Variables left to eliminate:")
-            #print(elim_order)
+            logging.info("The resulting factors are:")
+            self.log_factors(self.factors)
+            logging.info("----------------------------------")
+            logging.info("Variables left to eliminate are: {order}".format(order=elim_order))
+            
         #multipoly for query variables?
         for next_variable in self.query:
             factors_including_variable = [factor for factor in self.factors if next_variable in factor.columns.values]
@@ -185,8 +190,8 @@ class VariableElimination():
 
         result = self.normalize_factor(product)
         
-        print("resulting factor is:")
-        print(result)
+        logging.info("Resulting factor is:")
+        logging.info(result)
         return result
             
             
