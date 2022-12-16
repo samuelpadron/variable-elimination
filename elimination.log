@@ -1,0 +1,68 @@
+INFO:root:The query variable is: Alarm
+INFO:root:The observed values are: {'Burglary': 'True'}
+INFO:root:The elimination order is: ['Earthquake', 'JohnCalls', 'MaryCalls']
+INFO:root:The initial factors are:
+INFO:root:______________________________________
+INFO:root:The next variable to eliminate is Earthquake
+INFO:root:The resulting factors are:
+INFO:root:   prob
+0  0.01
+INFO:root:  JohnCalls  Alarm  prob
+0      True   True  0.90
+1     False   True  0.10
+2      True  False  0.05
+3     False  False  0.95
+INFO:root:  MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99
+INFO:root:   Alarm    prob
+0  False  0.0598
+1   True  0.9402
+INFO:root:----------------------------------
+INFO:root:Variables left to eliminate:
+INFO:root:['JohnCalls', 'MaryCalls']
+INFO:root:The next variable to eliminate is JohnCalls
+INFO:root:The resulting factors are:
+INFO:root:   prob
+0  0.01
+INFO:root:  MaryCalls  Alarm  prob
+0      True   True  0.70
+1     False   True  0.30
+2      True  False  0.01
+3     False  False  0.99
+INFO:root:   Alarm    prob
+0  False  0.0598
+1   True  0.9402
+INFO:root:   Alarm  prob
+0  False   1.0
+1   True   1.0
+INFO:root:----------------------------------
+INFO:root:Variables left to eliminate:
+INFO:root:['MaryCalls']
+INFO:root:The next variable to eliminate is MaryCalls
+INFO:root:The resulting factors are:
+INFO:root:   prob
+0  0.01
+INFO:root:   Alarm    prob
+0  False  0.0598
+1   True  0.9402
+INFO:root:   Alarm  prob
+0  False   1.0
+1   True   1.0
+INFO:root:   Alarm  prob
+0  False   1.0
+1   True   1.0
+INFO:root:----------------------------------
+INFO:root:Variables left to eliminate:
+INFO:root:[]
+INFO:root:resulting factor is:
+INFO:root:[   prob
+0  0.01,    Alarm    prob
+0  False  0.0598
+1   True  0.9402,    Alarm  prob
+0  False   1.0
+1   True   1.0,    Alarm  prob
+0  False   1.0
+1   True   1.0]

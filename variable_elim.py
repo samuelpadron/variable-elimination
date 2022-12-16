@@ -10,6 +10,7 @@ from pandas import DataFrame
 from functools import reduce
 import itertools
 import numpy as np
+import logging
 class VariableElimination():
 
     def __init__(self, network):
@@ -20,6 +21,7 @@ class VariableElimination():
         """
         self.network = network
         self.factors = [network.probabilities[node] for node in network.nodes]
+        logging.basicConfig(filename='elimination.log', encoding='utf-8', level=logging.DEBUG)
 
 
     def factor_reduction(self, factor:DataFrame, column_observed:str, value_observed:str) -> DataFrame:
@@ -91,13 +93,14 @@ class VariableElimination():
                 for the query variable
 
         """
-        print("The query variable is: {query}".format(query=query))
         
-        print("The observed values are: {observed}".format(observed=observed))
+        
+        logging.info("The query variable is: {query}".format(query=query))
+        
+        logging.info("The observed values are: {observed}".format(observed=observed))
     
-        print("The elimination order is: {order}".format(order=elim_order))
+        logging.info("The elimination order is: {order}".format(order=elim_order))
         
-        print("----------------------------------")
         # discard observed values
         filtered_factors = []
         for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
@@ -107,6 +110,12 @@ class VariableElimination():
                 else:
                     filtered_factors.append(factor)
         self.factors = filtered_factors
+        
+        logging.info("The initial factors are:")
+        for f in self.factors:
+                    print(f)
+        
+        logging.info("______________________________________")
 
         while len(elim_order) > 0:
             #update variable Z to be next in ordering
@@ -117,7 +126,7 @@ class VariableElimination():
             
             if len(factors_including_variable) > 0: #do we need this?
 
-                print("The next variable to eliminate is " + next_variable)
+                logging.info("The next variable to eliminate is " + next_variable)
             
                 #get product of factors
                 product = reduce(lambda i, j: self.factor_product(i, j), factors_including_variable)
@@ -125,10 +134,10 @@ class VariableElimination():
                 #sum out the variable
                 result = self.factor_marginalization(product, next_variable)
 
-                #see what the old factors are
-                print("The old factors are:")
-                for f in self.factors:
-                    print(f)
+                # #see what the old factors are
+                # print("The old factors are:")
+                # for f in self.factors:
+                #     print(f)
 
                 #remove factors that have Z from the formula
                 self.factors = list(filter(lambda factor: next_variable not in factor.columns.values[:-1].tolist(), self.factors))
@@ -137,19 +146,20 @@ class VariableElimination():
                 self.factors.append(result)
 
                 #check if the factors were correctly updated
-                print("The resulting factors are:")
+                logging.info("The resulting factors are:")
                 for f in self.factors:
-                    print(f)
+                    logging.info(f)
 
-                print("----------------------------------")
-                print("Variables left to eliminate:")
-                print(elim_order)
+                logging.info("----------------------------------")
+                logging.info("Variables left to eliminate:")
+                logging.info(elim_order)
 
         #TODO normalize resulting factor
         # divide all the elements in the factor by the sum of the factor resulting by the marginalization of 
         #the varibable we have in the queue.
-        print("resulting factor is:")
-        print(self.factors)
+        logging.info("resulting factor is:")
+        logging.info(self.factors)
+        
             
             
             
