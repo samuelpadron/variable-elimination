@@ -18,7 +18,6 @@ class VariableElimination():
         """
         Initialize the variable elimination algorithm with the specified network.
         Add more initializations if necessary.
-
         """
         self.network = network
         self.factors = [network.probabilities[node] for node in network.nodes]
@@ -36,7 +35,6 @@ class VariableElimination():
         Returns:
             DataFrame: the reduced factor
         """
-        
         return factor[factor[column_observed] == value_observed].drop(columns=[column_observed])
         
         
@@ -125,8 +123,6 @@ class VariableElimination():
                 for the query variable, this is printed and not returned
 
         """
-        
-        
         logging.info("The query variable is: {query}".format(query=query))
         
         logging.info("The observed values are: {observed}".format(observed=observed))
@@ -137,7 +133,6 @@ class VariableElimination():
         self.query = query
         filtered_factors = []
         
-            
         for factor in self.factors:
             for (column_observed, value_observed) in [(key,observed[key]) for key in observed]:
                 if column_observed in factor.columns:
@@ -177,7 +172,9 @@ class VariableElimination():
                 
             #check if the factors were correctly updated
             logging.info("The resulting factors are:")
+            
             self.log_factors(self.factors)
+            
             logging.info("----------------------------------")
             logging.info("Variables left to eliminate are: {order}".format(order=elim_order))
             
